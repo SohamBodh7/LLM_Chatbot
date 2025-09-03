@@ -1,0 +1,27 @@
+# .gitignore for a Python project
+
+# --- Secrets ---
+# Ignore Streamlit secrets file to prevent exposing API keys
+0.streamlit/secrets.toml
+secrets.toml
+
+# Ignore python files containing secrets or keys
+*secret*.py
+*_key.py
+
+# --- Python ---
+# Ignore Python cache files and compiled files
+__pycache__/
+*.pyc
+
+# Ignore virtual environments
+chatbot_env/
+venv/
+env/
+.venv/
+.env
+
+# --- Test Artifacts ---
+# Ignore generated test reports
+testsprite_report_*.html
+.streamlit/secrets.toml

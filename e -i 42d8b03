@@ -1,0 +1,18 @@
+[33mc5cf479[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m)[m feat: Implement chatbot logic and remove secrets
+[33m6b59130[m updated my gitignore
+[33me4094f3[m added secrets.toml file
+[33m94a5190[m finalized the code
+[33m5d45cbf[m updated dockerfile
+[33m6e782da[m updated the chatbot and added DockerFile
+[33m42d8b03[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m added delete category and added dynamic key feature for file uploader of streamlit
+[33m8c2ecf0[m updated the user page
+[33m9e4d536[m Added documents folder
+[33m5b12954[m modified chatbot file
+[33m170c000[m updated code for chatbot with features of admin user and selecting processes
+[33m4e3f384[m Merge branch 'main' of https://github.com/SohamBodh7/LLM-Chatbot
+[33mf57d901[m Ran test cases with help of Test Sprite
+[33m08fd07a[m Added Dev Container Folder
+[33m554ac52[m Merge branch 'main' of https://github.com/SohamBodh7/LLM-Chatbot
+[33m3dee993[m Changing the API key fetching from secret_key to streamlit
+[33m1c10b57[m Create README.md
+[33m0bb58ae[m Initial commit of chatbot project

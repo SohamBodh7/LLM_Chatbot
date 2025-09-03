@@ -1,0 +1,13 @@
+# Core application framework
+streamlit==1.46.1
+
+# LangChain libraries for AI logic
+langchain==0.3.26
+langchain-groq==0.3.5
+langchain-community
+
+# Document processing and vector stores
+pypdf==5.7.0
+sentence-transformers==5.0.0
+faiss-cpu==1.11.0
+tiktoken==0.7.0
