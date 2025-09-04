@@ -9,7 +9,7 @@ def get_llm():
         llm = ChatGroq(
             temperature=0,
             groq_api_key=grok_api_key,
-            model_name="llama-3.1-70b-versatile"  # You can change this to your preferred model
+            model_name="llama-3.3-70b-versatile"  # You can change this to your preferred model
         )
         return llm
     except Exception as e:
@@ -19,7 +19,7 @@ def get_llm():
 # You can also add other common configurations here
 DEFAULT_TEMPERATURE = 0
 AVAILABLE_MODELS = [
-    "llama-3.1-70b-versatile",
+    "llama-3.3-70b-versatile",
     "llama-3.1-8b-instant",
     "mixtral-8x7b-32768",
     "gemma-7b-it"
