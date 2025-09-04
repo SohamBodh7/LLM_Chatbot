@@ -46,4 +46,4 @@ VOLUME /app/vector_stores
 EXPOSE 8501
 
 # The command to run when the container starts
-CMD ["streamlit", "run", "chatbot.py", "--server.port=8501", "--server.address=127.0.0.1"]
+CMD ["streamlit", "run", "chatbot.py", "--server.port=8501", "--server.address=0.0.0.0"]
