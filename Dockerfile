@@ -19,6 +19,8 @@ COPY preload_models.py .
 RUN python preload_models.py
 
 # ---
+COPY .streamlit /app/.streamlit
+
 
 # Stage 2: Final Application Image - A lean image with the app and its pre-built dependencies
 FROM python:3.10-slim
