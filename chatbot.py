@@ -34,7 +34,7 @@ def get_qa_llm():
     """Initializes and caches the Language Model.
     It relies on the GROQ_API_KEY environment variable being set."""
     try:
-        return ChatGroq(model_name="llama3-70b-8192", temperature=0.1)
+        return ChatGroq(model_name="llama-3.3-70b-versatile", temperature=0.3)
     except Exception as e:
         st.error(f"Failed to initialize the language model: {e}")
         return None
