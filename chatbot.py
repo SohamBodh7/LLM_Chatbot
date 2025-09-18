@@ -20,13 +20,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# --- Load the Groq API Key from Streamlit Secrets ---
-try:
-    grok_api_key = st.secrets["grok_api_key"]
-except (KeyError, FileNotFoundError):
-    st.error("🚨 Groq API Key not found. Please add it to your Streamlit secrets.")
-    st.stop()
-
 def setup_directories():
     """Create base directories for documents and vector stores if they don't exist."""
     os.makedirs("document_library", exist_ok=True)
@@ -330,15 +323,18 @@ def login_page():
 
 def main():
     """Main function to run the Streamlit app."""
-    # --- Load and set API Key ---
-    try:
-        grok_api_key = st.secrets["grok_api_key"]
-        # Set Groq API Key as an environment variable for LangChain components
-        os.environ["GROQ_API_KEY"] = grok_api_key
-    except (KeyError, FileNotFoundError):
-        st.error("🚨 Groq API Key not found. Please add it to your Streamlit secrets.")
-        st.stop()
+    # --- Load and set API Key: Prioritize environment variables for Docker ---
+    grok_api_key = os.getenv("GROQ_API_KEY")
+    if not grok_api_key:
+        # Fallback to Streamlit secrets for local development
+        try:
+            grok_api_key = st.secrets["grok_api_key"]
+        except (KeyError, FileNotFoundError):
+            st.error("🚨 Groq API Key not found. Please set it as a `GROQ_API_KEY` environment variable or in Streamlit secrets.")
+            st.stop()
 
+    # Set the key as an environment variable for LangChain components to find it
+    os.environ["GROQ_API_KEY"] = grok_api_key
     # Ensure required directories exist
     setup_directories()
 
