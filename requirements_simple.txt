@@ -1,0 +1,22 @@
+# Core application framework
+streamlit
+
+# LangChain libraries for AI logic
+langchain
+langchain-groq
+langchain-community
+
+# Document processing and vector stores
+pypdf
+sentence-transformers
+faiss-cpu
+tiktoken
+
+# Environment and configuration
+python-dotenv
+requests
+
+# Data handling
+pandas
+numpy
+scikit-learn
