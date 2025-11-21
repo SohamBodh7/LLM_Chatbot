@@ -18,6 +18,7 @@ services:
     volumes:
       - document_library_data:/app/document_library
       - vector_stores_data:/app/vector_stores
+      - ./.streamlit/secrets.toml:/app/.streamlit/secrets.toml:ro
 
 # Define the named volumes that are managed by Docker.
 # This is the recommended way to handle persistent data in Docker.
