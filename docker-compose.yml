@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  chatbot:
+    # Build the image from the Dockerfile in the current directory.
+    # The image will be named 'chatbot_project-chatbot' by default.
+    build: .
+    container_name: chatbot_app
+    restart: unless-stopped
+
+    # Map port 8501 on the host to port 8501 in the container,
+    # so you can access the Streamlit app from your browser.
+    ports:
+      - "8501:8501"
+
+    # Define named volumes to persist data. This is crucial for your
+    # document library and vector stores, ensuring they are not lost
+    # when the container is stopped or recreated.
+    volumes:
+      - document_library_data:/app/document_library
+      - vector_stores_data:/app/vector_stores
+
+# Define the named volumes that are managed by Docker.
+# This is the recommended way to handle persistent data in Docker.
+volumes:
+  document_library_data:
+    # The 'driver: local' is the default, but it's good to be explicit.
+    driver: local
+  vector_stores_data:
+    driver: local

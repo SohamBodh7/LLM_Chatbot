@@ -19,3 +19,4 @@ test_document.pdf
 .idea/
 .vscode/
 *.DS_Store
+docker-compose.yml
