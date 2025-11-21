@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   chatbot:
     # Build the image from the Dockerfile in the current directory.
@@ -12,7 +10,8 @@ services:
     # so you can access the Streamlit app from your browser.
     ports:
       - "8501:8501"
-
+    env_file:
+      - .env
     # Define named volumes to persist data. This is crucial for your
     # document library and vector stores, ensuring they are not lost
     # when the container is stopped or recreated.
