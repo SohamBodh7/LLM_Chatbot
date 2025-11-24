@@ -1,18 +1,24 @@
 pipeline {
-    agent any 
+    agent any
 
     environment {
         // --- CONFIGURATION ---
-        // Match the name exactly as it appears in Manage Jenkins -> System
+        // 1. Name matches your Jenkins System Config
         SONAR_SERVER_NAME = "sonarqube" 
-
-        APP_NAME = "sohamrepo-chatbot"
-        // Ensure this port matches your Nexus (e.g., 8085)
-        NEXUS_URL = "localhost:8085" 
-        IMAGE_TAG = "${BUILD_NUMBER}"
         
+        // 2. Project Name
+        APP_NAME = "sohamrepo-chatbot"
+        
+        // 3. Nexus URL (Port 8085)
+        NEXUS_URL = "localhost:8085" 
+        
+        IMAGE_TAG = "${BUILD_NUMBER}"
         NEXUS_CREDS_ID = "nexus-docker-login" 
         SONAR_PROJECT_KEY = "${APP_NAME}"
+
+        // --- MEMORY FIX (Without K8s changes) ---
+        // This forces SonarScanner to use max 256MB RAM so it doesn't crash the container
+        SONAR_SCANNER_OPTS = "-Xmx256m"
     }
 
     stages {
@@ -47,7 +53,7 @@ pipeline {
 
         stage('4. Build Image') {
             steps {
-                // Run inside 'dind' container to access Docker
+                // We must keep this container wrapper so Jenkins finds the 'docker' command
                 container('dind') {
                     script {
                         echo "🐳 Building Docker Image..."
@@ -72,9 +78,8 @@ pipeline {
                 }
             }
         }
-    } // <--- This closing brace ends the 'stages' block
+    }
 
-    // 'post' must be OUTSIDE 'stages' but INSIDE 'pipeline'
     post {
         always {
             container('dind') {
