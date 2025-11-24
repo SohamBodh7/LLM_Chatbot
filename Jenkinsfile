@@ -3,20 +3,18 @@ pipeline {
 
     environment {
         // --- CONFIGURATION ---
-        SONAR_SERVER_NAME = "sonarqube" 
         APP_NAME = "sohamrepo-chatbot"
         
-        // ⚠️ CRITICAL CHANGE FOR COLLEGE SERVER:
-        // 'localhost' won't work inside the cluster. We guess the service name is 'nexus'.
-        // If this fails, change 'nexus' to the IP address of the server.
+        // ⚠️ NOTE: If 'nexus:8085' fails with "Name not known", 
+        // replace it with the specific IP address of the college server (e.g. "192.168.1.50:8085")
         NEXUS_URL = "nexus:8085" 
         
         IMAGE_TAG = "${BUILD_NUMBER}"
         NEXUS_CREDS_ID = "nexus-docker-login" 
-        SONAR_PROJECT_KEY = "${APP_NAME}"
         
-        // Memory safety (keep this!)
-        SONAR_SCANNER_OPTS = "-Xmx256m"
+        // Sonar variables (Kept here for future use)
+        SONAR_SERVER_NAME = "sonarqube"
+        SONAR_PROJECT_KEY = "${APP_NAME}"
     }
 
     stages {
@@ -28,37 +26,47 @@ pipeline {
 
         stage('2. Prepare Configs') {
             steps {
+                // Create dummy secret file so Streamlit doesn't crash during build
                 sh 'mkdir -p .streamlit'
                 sh 'echo "[general]\nmock = true" > .streamlit/secrets.toml'
             }
         }
 
+        // ============================================================
+        // 🛑 SONARQUBE STAGE (COMMENTED OUT FOR NOW)
+        // To enable this later, remove the "/*" and "*/" lines.
+        // ============================================================
+        /*
         stage('3. SonarQube Analysis') {
             steps {
                 script {
                     def scannerHome = tool 'SonarScanner' 
                     withSonarQubeEnv(SONAR_SERVER_NAME) { 
-                        // 🛠️ THE FIX IS HERE:
-                        // We add -Dsonar.host.url to OVERRIDE the broken admin setting.
-                        // We try the internal container name "http://sonarqube:9000"
+                        // Try to connect to internal container using -Dsonar.host.url
                         sh """
                         ${scannerHome}/bin/sonar-scanner \
                         -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
                         -Dsonar.sources=. \
                         -Dsonar.python.version=3.10 \
-                        -Dsonar.host.url=http://sonarqube:9000
+                        -Dsonar.host.url=http://sonarqube:9000 \
+                        -X
                         """
                     }
                 }
             }
         }
+        */
+        // ============================================================
 
         stage('4. Build Image') {
             steps {
+                // Run inside 'dind' container to find the 'docker' command
                 container('dind') {
                     script {
                         echo "🐳 Building Docker Image..."
+                        // Wait a few seconds to ensure Docker Daemon is ready
                         sh 'sleep 5'
+                        
                         sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
                         sh "docker tag ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ${NEXUS_URL}/${APP_NAME}:latest"
                     }
@@ -71,7 +79,6 @@ pipeline {
                 container('dind') {
                     script {
                         echo "🚀 Uploading to Nexus..."
-                        // Note: If 'nexus:8085' fails, you might need to try the Server IP
                         withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                             sh "echo $PASS | docker login ${NEXUS_URL} -u $USER --password-stdin"
                             sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
@@ -87,9 +94,9 @@ pipeline {
         always {
             container('dind') {
                 echo "🧹 Cleaning up..."
+                // Use '|| true' so the pipeline stays Green even if cleanup errors occur
                 sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
                 sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
             }
         }
     }
-}
