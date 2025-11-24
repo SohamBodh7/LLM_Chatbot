@@ -5,17 +5,15 @@ pipeline {
         // --- CONFIGURATION ---
         APP_NAME = "sohamrepo-chatbot"
         
-        // ⚠️ CRITICAL: If 'nexus:8085' fails with "Name not known" in the next run,
-        // you MUST replace 'nexus' with the actual IP Address of the college server.
-        // Example: "192.168.1.50:8085"
+        // Nexus Connection (Internal Service Name)
+        // If this fails, replace 'nexus' with the Server IP (e.g. 192.168.1.50)
         NEXUS_URL = "nexus:8085" 
         
         IMAGE_TAG = "${BUILD_NUMBER}"
-        NEXUS_CREDS_ID = "nexus-docker-login" 
         
-        // Variables for the disabled SonarQube stage (kept for reference)
-        SONAR_SERVER_NAME = "sonarqube"
-        SONAR_PROJECT_KEY = "${APP_NAME}"
+        // --- CREDENTIAL IDs (Must exist in Jenkins) ---
+        NEXUS_CREDS_ID = "nexus-docker-login" 
+        SONAR_TOKEN_ID = "2401023-chatbot" // <--- ENSURE THIS ID EXISTS IN JENKINS
     }
 
     stages {
@@ -27,48 +25,43 @@ pipeline {
 
         stage('2. Prepare Configs') {
             steps {
-                // Create dummy secret file so Streamlit doesn't crash during build
                 sh 'mkdir -p .streamlit'
                 sh 'echo "[general]\nmock = true" > .streamlit/secrets.toml'
             }
         }
 
-        // ============================================================
-        // 🛑 SONARQUBE STAGE (DISABLED)
-        // Code preserved below for future reference.
-        // To enable, remove the "/*" and "*/" symbols.
-        // ============================================================
-        /*
         stage('3. SonarQube Analysis') {
             steps {
                 script {
+                    // 1. Get the scanner tool
                     def scannerHome = tool 'SonarScanner' 
-                    withSonarQubeEnv(SONAR_SERVER_NAME) { 
-                        // Try to connect to internal container using -Dsonar.host.url
+                    
+                    // 2. Manually inject the Token (Bypassing broken Global Config)
+                    withCredentials([string(credentialsId: SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
+                        
+                        echo "🔍 Scanning with Manual Token..."
+                        
+                        // 3. Run Scanner with specific URL and Token
                         sh """
                         ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=${SONAR_PROJECT_KEY} \
+                        -Dsonar.projectKey=${APP_NAME} \
                         -Dsonar.sources=. \
                         -Dsonar.python.version=3.10 \
                         -Dsonar.host.url=http://sonarqube:9000 \
+                        -Dsonar.login=${SONAR_TOKEN} \
                         -X
                         """
                     }
                 }
             }
         }
-        */
-        // ============================================================
 
         stage('4. Build Image') {
             steps {
-                // Run inside 'dind' container to find the 'docker' command
                 container('dind') {
                     script {
                         echo "🐳 Building Docker Image..."
-                        // Wait a few seconds to ensure Docker Daemon is ready
                         sh 'sleep 5'
-                        
                         sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
                         sh "docker tag ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ${NEXUS_URL}/${APP_NAME}:latest"
                     }
@@ -96,7 +89,6 @@ pipeline {
         always {
             container('dind') {
                 echo "🧹 Cleaning up..."
-                // Use '|| true' so the pipeline stays Green even if cleanup errors occur
                 sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
                 sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
             }
