@@ -5,14 +5,15 @@ pipeline {
         // --- CONFIGURATION ---
         APP_NAME = "sohamrepo-chatbot"
         
-        // ⚠️ NOTE: If 'nexus:8085' fails with "Name not known", 
-        // replace it with the specific IP address of the college server (e.g. "192.168.1.50:8085")
+        // ⚠️ CRITICAL: If 'nexus:8085' fails with "Name not known" in the next run,
+        // you MUST replace 'nexus' with the actual IP Address of the college server.
+        // Example: "192.168.1.50:8085"
         NEXUS_URL = "nexus:8085" 
         
         IMAGE_TAG = "${BUILD_NUMBER}"
         NEXUS_CREDS_ID = "nexus-docker-login" 
         
-        // Sonar variables (Kept here for future use)
+        // Variables for the disabled SonarQube stage (kept for reference)
         SONAR_SERVER_NAME = "sonarqube"
         SONAR_PROJECT_KEY = "${APP_NAME}"
     }
@@ -33,8 +34,9 @@ pipeline {
         }
 
         // ============================================================
-        // 🛑 SONARQUBE STAGE (COMMENTED OUT FOR NOW)
-        // To enable this later, remove the "/*" and "*/" lines.
+        // 🛑 SONARQUBE STAGE (DISABLED)
+        // Code preserved below for future reference.
+        // To enable, remove the "/*" and "*/" symbols.
         // ============================================================
         /*
         stage('3. SonarQube Analysis') {
@@ -100,3 +102,4 @@ pipeline {
             }
         }
     }
+}
