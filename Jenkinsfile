@@ -2,8 +2,8 @@ pipeline {
     agent any 
 
     environment {
-        // --- 1. CONFIGURATION ---
-        // I updated this to match your screenshot exactly (lowercase)
+        // --- CONFIGURATION ---
+        // Match the name exactly as it appears in Manage Jenkins -> System
         SONAR_SERVER_NAME = "sonarqube" 
 
         APP_NAME = "sohamrepo-chatbot"
@@ -33,7 +33,6 @@ pipeline {
             steps {
                 script {
                     def scannerHome = tool 'SonarScanner' 
-                    // This now uses "sonarqube" to match your screenshot
                     withSonarQubeEnv(SONAR_SERVER_NAME) { 
                         sh """
                         ${scannerHome}/bin/sonar-scanner \
@@ -73,13 +72,15 @@ pipeline {
                 }
             }
         }
-        
-        post {
-            always {
-                container('dind') {
-                    sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
-                    sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
-                }
+    } // <--- This closing brace ends the 'stages' block
+
+    // 'post' must be OUTSIDE 'stages' but INSIDE 'pipeline'
+    post {
+        always {
+            container('dind') {
+                echo "🧹 Cleaning up..."
+                sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
+                sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
             }
         }
     }
