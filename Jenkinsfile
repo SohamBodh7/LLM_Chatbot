@@ -71,4 +71,25 @@ pipeline {
                 container('dind') {
                     script {
                         echo "🚀 Uploading to Nexus..."
-                        // Note: If 'nexus:
+                        // Note: If 'nexus:8085' fails, you might need to try the Server IP
+                        withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                            sh "echo $PASS | docker login ${NEXUS_URL} -u $USER --password-stdin"
+                            sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
+                            sh "docker push ${NEXUS_URL}/${APP_NAME}:latest"
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            container('dind') {
+                echo "🧹 Cleaning up..."
+                sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
+                sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
+            }
+        }
+    }
+}
