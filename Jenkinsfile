@@ -55,6 +55,11 @@ pipeline {
         stage('4. Build Docker Image') {
             steps {
                 script {
+                    echo "Checking Docker availability..."
+                    sh 'which docker || echo "Docker not in PATH"'
+                    sh 'docker --version || echo "Docker command failed"'
+                    sh 'echo "PATH is: $PATH"'
+                    
                     echo "Building Docker Image..."
                     sh 'sleep 5'
                     sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
