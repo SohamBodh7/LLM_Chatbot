@@ -27,7 +27,8 @@ spec:
 
     environment {
         APP_NAME = "sohamrepo-chatbot"
-        NEXUS_URL = "nexus:8085" 
+        NEXUS_URL = "nexus.imc.com:8085" 
+        SONAR_HOST_URL = "http://sonarqube.imcc.com:9000"
         IMAGE_TAG = "${BUILD_NUMBER}"
         
         // Credentials
@@ -64,7 +65,7 @@ spec:
                             -Dsonar.projectKey=${APP_NAME} \
                             -Dsonar.sources=. \
                             -Dsonar.python.version=3.10 \
-                            -Dsonar.host.url=http://sonarqube:9000 \
+                            -Dsonar.host.url=${SONAR_HOST_URL} \
                             -Dsonar.login=${SONAR_TOKEN}
                             """
                             echo "SonarQube scan completed successfully"
@@ -100,7 +101,7 @@ spec:
                         withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
                             sh "echo \$PASS | docker login ${NEXUS_URL} -u \$USER --password-stdin"
                             sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
-                            sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
+                            sh "docker push ${NEXUS_URL}/${APP_NAME}:latest"
                             echo "Docker images pushed successfully to Nexus"
                         }
                     }
