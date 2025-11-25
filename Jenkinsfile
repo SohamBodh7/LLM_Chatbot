@@ -21,12 +21,34 @@ pipeline {
         stage('2. Prepare Configs') {
             steps {
                 sh 'mkdir -p .streamlit'
-                sh 'echo "[general]\nmock = true" > .streamlit/secrets.toml'
+                sh 'echo "[general]\\nmock = true" > .streamlit/secrets.toml'
             }
         }
 
-        // 🚀 PRIORITY 1: BUILD IMAGE
-        stage('3. Build Image') {
+        // 🔍 STAGE 1: SONARQUBE SCANNING
+        stage('3. SonarQube Analysis') {
+            steps {
+                script {
+                    def scannerHome = tool 'SonarScanner' 
+                    withCredentials([string(credentialsId: SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
+                        echo "🔍 Running SonarQube Code Analysis..."
+                        sh """
+                        export SONAR_SCANNER_OPTS="-Xmx512m"
+                        ${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=${APP_NAME} \
+                        -Dsonar.sources=. \
+                        -Dsonar.python.version=3.10 \
+                        -Dsonar.host.url=http://sonarqube:9000 \
+                        -Dsonar.login=${SONAR_TOKEN}
+                        """
+                        echo "✅ SonarQube scan completed successfully"
+                    }
+                }
+            }
+        }
+
+        // 🐳 STAGE 2: BUILD DOCKER IMAGE
+        stage('4. Build Docker Image') {
             steps {
                 container('dind') {
                     script {
@@ -34,53 +56,24 @@ pipeline {
                         sh 'sleep 5'
                         sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
                         sh "docker tag ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ${NEXUS_URL}/${APP_NAME}:latest"
+                        echo "✅ Docker image built successfully"
                     }
                 }
             }
         }
 
-        // 🚀 PRIORITY 2: PUSH TO NEXUS
-        stage('4. Push to Nexus') {
+        // 🚀 STAGE 3: PUSH TO NEXUS REPOSITORY
+        stage('5. Push to Nexus Repository') {
             steps {
                 container('dind') {
                     script {
-                        echo "🚀 Uploading to Nexus..."
+                        echo "🚀 Pushing Docker image to Nexus Repository..."
                         withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                            try {
-                                sh "echo $PASS | docker login ${NEXUS_URL} -u $USER --password-stdin"
-                                sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
-                                sh "docker push ${NEXUS_URL}/${APP_NAME}:latest"
-                            } catch (Exception e) {
-                                error("Nexus Push Failed")
-                            }
+                            sh "echo \$PASS | docker login ${NEXUS_URL} -u \$USER --password-stdin"
+                            sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
+                            sh "docker push ${NEXUS_URL}/${APP_NAME}:latest"
+                            echo "✅ Docker images pushed successfully to Nexus"
                         }
-                    }
-                }
-            }
-        }
-
-        // ⚠️ OPTIONAL: SONARQUBE (RUNS LAST)
-        stage('5. SonarQube (Optional)') {
-            steps {
-                script {
-                    try {
-                        def scannerHome = tool 'SonarScanner' 
-                        withCredentials([string(credentialsId: SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
-                            echo "🔍 Attempting SonarQube Scan..."
-                            // Attempt scan with limited memory to prevent crash
-                            sh """
-                            export SONAR_SCANNER_OPTS="-Xmx512m"
-                            ${scannerHome}/bin/sonar-scanner \
-                            -Dsonar.projectKey=${APP_NAME} \
-                            -Dsonar.sources=. \
-                            -Dsonar.python.version=3.10 \
-                            -Dsonar.host.url=http://sonarqube:9000 \
-                            -Dsonar.login=${SONAR_TOKEN}
-                            """
-                        }
-                    } catch (Exception e) {
-                        echo "⚠️ Scan failed or crashed agent. (But Docker image is safe!)"
-                        currentBuild.result = 'UNSTABLE'
                     }
                 }
             }
@@ -89,11 +82,29 @@ pipeline {
 
     post {
         always {
-            container('dind') {
-                echo "🧹 Cleaning up..."
-                sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
-                sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
+            script {
+                try {
+                    container('dind') {
+                        echo "🧹 Cleaning up local Docker images..."
+                        sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
+                        sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
+                    }
+                } catch (Exception e) {
+                    echo "⚠️ Cleanup skipped or failed (non-critical)"
+                }
             }
+        }
+        success {
+            echo "🎉 Pipeline completed successfully!"
+            echo "✓ SonarQube analysis passed"
+            echo "✓ Docker image built: ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
+            echo "✓ Image pushed to Nexus Repository"
+        }
+        failure {
+            echo "❌ Pipeline failed. Check the logs above for details."
+        }
+        unstable {
+            echo "⚠️ Pipeline completed with warnings."
         }
     }
 }
