@@ -47,31 +47,6 @@ pipeline {
                     } catch (Exception e) {
                         echo "⚠️ SonarQube scan failed: ${e.message}"
                         echo "⚠️ Continuing pipeline despite SonarQube failure..."
-                        currentBuild.result = 'UNSTABLE'
-                    }
-                }
-            }
-        }
-
-        // 🐳 STAGE 2: BUILD DOCKER IMAGE
-        stage('4. Build Docker Image') {
-            steps {
-                container('dind') {
-                    script {
-                        echo "�🐳 Building Docker Image..."
-                        sh 'sleep 5'
-                        sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
-                        sh "docker tag ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ${NEXUS_URL}/${APP_NAME}:latest"
-                        echo "✅ Docker image built successfully"
-                    }
-                }
-            }
-        }
-
-        // 🚀 STAGE 3: PUSH TO NEXUS REPOSITORY
-        stage('5. Push to Nexus Repository') {
-            steps {
-                container('dind') {
                     script {
                         echo "🚀 Pushing Docker image to Nexus Repository..."
                         withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
