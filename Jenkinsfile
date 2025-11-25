@@ -1,5 +1,29 @@
 pipeline {
-    agent any
+    agent {
+        kubernetes {
+            yaml '''
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    jenkins: agent
+spec:
+  containers:
+  - name: docker
+    image: docker:latest
+    command:
+    - cat
+    tty: true
+    volumeMounts:
+    - name: docker-sock
+      mountPath: /var/run/docker.sock
+  volumes:
+  - name: docker-sock
+    hostPath:
+      path: /var/run/docker.sock
+'''
+        }
+    }
 
     environment {
         APP_NAME = "sohamrepo-chatbot"
@@ -20,8 +44,10 @@ pipeline {
 
         stage('2. Prepare Configs') {
             steps {
-                sh 'mkdir -p .streamlit'
-                sh 'echo "[general]\\nmock = true" > .streamlit/secrets.toml'
+                container('docker') {
+                    sh 'mkdir -p .streamlit'
+                    sh 'echo "[general]\\nmock = true" > .streamlit/secrets.toml'
+                }
             }
         }
 
@@ -30,7 +56,7 @@ pipeline {
                 script {
                     try {
                         def scannerHome = tool 'SonarScanner' 
-                        withCredentials([string(credentialsId: SONAR_TOKEN_ID, variable: 'squ_8e8e79a6b1be87b23f10bc58f4845370ce6e9e8c')]) {
+                        withCredentials([string(credentialsId: SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
                             echo "Running SonarQube Code Analysis..."
                             sh """
                             export SONAR_SCANNER_OPTS="-Xmx512m"
@@ -54,31 +80,29 @@ pipeline {
 
         stage('4. Build Docker Image') {
             steps {
-                script {
-                    echo "Checking Docker availability..."
-                    sh 'which docker || echo "Docker CLI not in PATH"'
-                    sh 'ls -la /var/run/docker.sock || echo "Docker socket not found"'
-                    sh 'echo "PATH is: $PATH"'
-                    
-                    echo "DOCKER IS NOT AVAILABLE ON THIS JENKINS SERVER"
-                    echo "Please contact your administrator to:"
-                    echo "1. Install Docker CLI in Jenkins container, OR"
-                    echo "2. Mount Docker socket: -v /var/run/docker.sock:/var/run/docker.sock"
-                    echo "Skipping Docker build..."
-                    error("Docker not available - cannot build image")
+                container('docker') {
+                    script {
+                        echo "Building Docker Image..."
+                        sh 'sleep 5'
+                        sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
+                        sh "docker tag ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ${NEXUS_URL}/${APP_NAME}:latest"
+                        echo "Docker image built successfully"
+                    }
                 }
             }
         }
 
         stage('5. Push to Nexus Repository') {
             steps {
-                script {
-                    echo "Pushing Docker image to Nexus Repository..."
-                    withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                        sh "echo \$PASS | docker login ${NEXUS_URL} -u \$USER --password-stdin"
-                        sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
-                        sh "docker push ${NEXUS_URL}/${APP_NAME}:latest"
-                        echo "Docker images pushed successfully to Nexus"
+                container('docker') {
+                    script {
+                        echo "Pushing Docker image to Nexus Repository..."
+                        withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                            sh "echo \$PASS | docker login ${NEXUS_URL} -u \$USER --password-stdin"
+                            sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
+                            sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
+                            echo "Docker images pushed successfully to Nexus"
+                        }
                     }
                 }
             }
@@ -87,13 +111,15 @@ pipeline {
 
     post {
         always {
-            script {
-                try {
-                    echo "Cleaning up local Docker images..."
-                    sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
-                    sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
-                } catch (Exception e) {
-                    echo "Cleanup skipped or failed (non-critical)"
+            container('docker') {
+                script {
+                    try {
+                        echo "Cleaning up local Docker images..."
+                        sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
+                        sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
+                    } catch (Exception e) {
+                        echo "Cleanup skipped or failed (non-critical)"
+                    }
                 }
             }
         }
@@ -104,8 +130,6 @@ pipeline {
         }
         failure {
             echo "Pipeline failed. Check the logs above for details."
-            echo "REASON: Docker is not installed/available on Jenkins server"
-            echo "SOLUTION: Contact your college administrator to configure Docker access"
         }
         unstable {
             echo "Pipeline completed with warnings (likely SonarQube connectivity issue)."
