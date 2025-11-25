@@ -32,7 +32,7 @@ pipeline {
                     try {
                         def scannerHome = tool 'SonarScanner' 
                         withCredentials([string(credentialsId: SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
-                            echo "� Running SonarQube Code Analysis..."
+                            echo "🔍 Running SonarQube Code Analysis..."
                             sh """
                             export SONAR_SCANNER_OPTS="-Xmx512m"
                             ${scannerHome}/bin/sonar-scanner \
@@ -47,14 +47,35 @@ pipeline {
                     } catch (Exception e) {
                         echo "⚠️ SonarQube scan failed: ${e.message}"
                         echo "⚠️ Continuing pipeline despite SonarQube failure..."
-                    script {
-                        echo "🚀 Pushing Docker image to Nexus Repository..."
-                        withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
-                            sh "echo \$PASS | docker login ${NEXUS_URL} -u \$USER --password-stdin"
-                            sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
-                            sh "docker push ${NEXUS_URL}/${APP_NAME}:latest"
-                            echo "✅ Docker images pushed successfully to Nexus"
-                        }
+                        currentBuild.result = 'UNSTABLE'
+                    }
+                }
+            }
+        }
+
+        // 🐳 STAGE 2: BUILD DOCKER IMAGE
+        stage('4. Build Docker Image') {
+            steps {
+                script {
+                    echo "🐳 Building Docker Image..."
+                    sh 'sleep 5'
+                    sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
+                    sh "docker tag ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ${NEXUS_URL}/${APP_NAME}:latest"
+                    echo "✅ Docker image built successfully"
+                }
+            }
+        }
+
+        // 🚀 STAGE 3: PUSH TO NEXUS REPOSITORY
+        stage('5. Push to Nexus Repository') {
+            steps {
+                script {
+                    echo "🚀 Pushing Docker image to Nexus Repository..."
+                    withCredentials([usernamePassword(credentialsId: NEXUS_CREDS_ID, usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                        sh "echo \$PASS | docker login ${NEXUS_URL} -u \$USER --password-stdin"
+                        sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
+                        sh "docker push ${NEXUS_URL}/${APP_NAME}:latest"
+                        echo "✅ Docker images pushed successfully to Nexus"
                     }
                 }
             }
@@ -65,11 +86,9 @@ pipeline {
         always {
             script {
                 try {
-                    container('dind') {
-                        echo "🧹 Cleaning up local Docker images..."
-                        sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
-                        sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
-                    }
+                    echo "🧹 Cleaning up local Docker images..."
+                    sh "docker rmi ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} || true"
+                    sh "docker rmi ${NEXUS_URL}/${APP_NAME}:latest || true"
                 } catch (Exception e) {
                     echo "⚠️ Cleanup skipped or failed (non-critical)"
                 }
