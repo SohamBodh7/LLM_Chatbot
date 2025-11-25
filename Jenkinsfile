@@ -27,8 +27,8 @@ spec:
 
     environment {
         APP_NAME = "sohamrepo-chatbot"
-        NEXUS_URL = "nexus.imc.com:8085" 
-        SONAR_HOST_URL = "http://sonarqube.imcc.com:9000"
+        NEXUS_URL = "192.168.20.250:8085" 
+        SONAR_HOST_URL = "http://192.168.20.250:9000"
         IMAGE_TAG = "${BUILD_NUMBER}"
         
         // Credentials
