@@ -25,23 +25,29 @@ pipeline {
             }
         }
 
-        // 🔍 STAGE 1: SONARQUBE SCANNING
+        // 🔍 STAGE 1: SONARQUBE SCANNING (Non-blocking)
         stage('3. SonarQube Analysis') {
             steps {
                 script {
-                    def scannerHome = tool 'SonarScanner' 
-                    withCredentials([string(credentialsId: SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
-                        echo "🔍 Running SonarQube Code Analysis..."
-                        sh """
-                        export SONAR_SCANNER_OPTS="-Xmx512m"
-                        ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=${APP_NAME} \
-                        -Dsonar.sources=. \
-                        -Dsonar.python.version=3.10 \
-                        -Dsonar.host.url=http://sonarqube:9000 \
-                        -Dsonar.login=${SONAR_TOKEN}
-                        """
-                        echo "✅ SonarQube scan completed successfully"
+                    try {
+                        def scannerHome = tool 'SonarScanner' 
+                        withCredentials([string(credentialsId: SONAR_TOKEN_ID, variable: 'SONAR_TOKEN')]) {
+                            echo "� Running SonarQube Code Analysis..."
+                            sh """
+                            export SONAR_SCANNER_OPTS="-Xmx512m"
+                            ${scannerHome}/bin/sonar-scanner \
+                            -Dsonar.projectKey=${APP_NAME} \
+                            -Dsonar.sources=. \
+                            -Dsonar.python.version=3.10 \
+                            -Dsonar.host.url=http://sonarqube:9000 \
+                            -Dsonar.login=${SONAR_TOKEN}
+                            """
+                            echo "✅ SonarQube scan completed successfully"
+                        }
+                    } catch (Exception e) {
+                        echo "⚠️ SonarQube scan failed: ${e.message}"
+                        echo "⚠️ Continuing pipeline despite SonarQube failure..."
+                        currentBuild.result = 'UNSTABLE'
                     }
                 }
             }
@@ -52,7 +58,7 @@ pipeline {
             steps {
                 container('dind') {
                     script {
-                        echo "🐳 Building Docker Image..."
+                        echo "�🐳 Building Docker Image..."
                         sh 'sleep 5'
                         sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
                         sh "docker tag ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ${NEXUS_URL}/${APP_NAME}:latest"
@@ -104,7 +110,9 @@ pipeline {
             echo "❌ Pipeline failed. Check the logs above for details."
         }
         unstable {
-            echo "⚠️ Pipeline completed with warnings."
+            echo "⚠️ Pipeline completed with warnings (likely SonarQube connectivity issue)."
+            echo "✓ Docker image built: ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
+            echo "✓ Image pushed to Nexus Repository"
         }
     }
 }
