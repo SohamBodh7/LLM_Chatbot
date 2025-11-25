@@ -56,15 +56,16 @@ pipeline {
             steps {
                 script {
                     echo "Checking Docker availability..."
-                    sh 'which docker || echo "Docker not in PATH"'
-                    sh 'docker --version || echo "Docker command failed"'
+                    sh 'which docker || echo "Docker CLI not in PATH"'
+                    sh 'ls -la /var/run/docker.sock || echo "Docker socket not found"'
                     sh 'echo "PATH is: $PATH"'
                     
-                    echo "Building Docker Image..."
-                    sh 'sleep 5'
-                    sh "docker build -t ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ."
-                    sh "docker tag ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG} ${NEXUS_URL}/${APP_NAME}:latest"
-                    echo "Docker image built successfully"
+                    echo "DOCKER IS NOT AVAILABLE ON THIS JENKINS SERVER"
+                    echo "Please contact your administrator to:"
+                    echo "1. Install Docker CLI in Jenkins container, OR"
+                    echo "2. Mount Docker socket: -v /var/run/docker.sock:/var/run/docker.sock"
+                    echo "Skipping Docker build..."
+                    error("Docker not available - cannot build image")
                 }
             }
         }
@@ -103,6 +104,8 @@ pipeline {
         }
         failure {
             echo "Pipeline failed. Check the logs above for details."
+            echo "REASON: Docker is not installed/available on Jenkins server"
+            echo "SOLUTION: Contact your college administrator to configure Docker access"
         }
         unstable {
             echo "Pipeline completed with warnings (likely SonarQube connectivity issue)."
