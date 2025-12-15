@@ -239,7 +239,7 @@ spec:
         IMAGE_TAG       = "latest"
         REGISTRY_URL    = "nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085"
         REGISTRY_REPO   = "2401023-chatbot"
-        SONAR_PROJECT   = "sonar-project-key"
+        SONAR_PROJECT   = "2401023_chatbot"
         SONAR_HOST_URL = "http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000"
     }
 
