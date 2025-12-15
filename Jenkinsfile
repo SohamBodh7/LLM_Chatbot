@@ -261,7 +261,7 @@ spec:
             steps {
                 container('sonar-scanner') {
                     withCredentials([
-                        string(credentialsId: 'SONAR_TOKEN_ID', variable: 'SONAR_TOKEN')
+                        string(credentialsId: 'sonar-token-2401023', variable: 'SONAR_TOKEN')
                     ]) {
                         sh '''
                             sonar-scanner \
