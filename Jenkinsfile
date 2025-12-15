@@ -310,7 +310,7 @@ spec:
                             kubectl apply -f ingress.yaml
                             kubectl apply -f pvc.yaml
                             kubectl apply -f namespace.yaml
-                            kubectl rollout status deployment/$APP_NAME -n <NAMESPACE>
+                            kubectl rollout status deployment/$APP_NAME -n 2401023-chatbot
                         '''
                     }
                 }

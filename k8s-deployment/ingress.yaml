@@ -5,7 +5,7 @@ apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: sohamrepo-chatbot-ingress
-  namespace: "chatbot-prod"
+  namespace: "2401023-chatbot"
   annotations:
     nginx.ingress.kubernetes.io/rewrite-target: /
 spec:

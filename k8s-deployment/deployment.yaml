@@ -4,7 +4,7 @@
 apiVersion: v1
 kind: Namespace
 metadata:
-  name: "chatbot-prod"
+  name: "2401023-chatbot"
 
 ---
 # -------------------------------
@@ -14,7 +14,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: sohamrepo-chatbot-deployment
-  namespace: "chatbot-prod"
+  namespace: "2401023-chatbot"
 spec:
   replicas: 1
   selector:

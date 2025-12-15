@@ -6,7 +6,7 @@ apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: app-pvc
-  namespace: "chatbot-prod"
+  namespace: "2401023-chatbot"
 spec:
   storageClassName: local-path
   accessModes:
