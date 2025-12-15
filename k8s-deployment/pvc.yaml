@@ -1,0 +1,16 @@
+# -------------------------------
+# PersistentVolumeClaim (Optional)
+# Use this if your app needs persistent storage
+# -------------------------------
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: app-pvc
+  namespace: "chatbot-prod"
+spec:
+  storageClassName: local-path
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi

@@ -1,0 +1,237 @@
+# ========================================
+# Kubernetes Deployment Quick Reference
+# Common kubectl commands for managing the chatbot
+# ========================================
+
+# ========================================
+# SETUP COMMANDS
+# ========================================
+
+# Create namespace
+kubectl apply -f namespace.yaml
+
+# Create Nexus registry secret
+kubectl create secret docker-registry nexus-secret \
+  --docker-server=127.0.0.1:30085 \
+  --docker-username=<YOUR_USERNAME> \
+  --docker-password=<YOUR_PASSWORD> \
+  --namespace=chatbot-prod
+
+# Create database secret
+kubectl create secret generic db-secret \
+  --from-literal=DB_USER=<db_user> \
+  --from-literal=DB_PASSWORD=<db_password> \
+  --from-literal=DB_NAME=<db_name> \
+  --namespace=chatbot-prod
+
+# Create database config
+kubectl create configmap db-config \
+  --from-literal=DB_HOST=<db_host> \
+  --from-literal=DB_PORT=5432 \
+  --namespace=chatbot-prod
+
+# ========================================
+# DEPLOYMENT COMMANDS
+# ========================================
+
+# Full deployment (with database + storage)
+kubectl apply -f pvc.yaml
+kubectl apply -f deployment.yaml
+kubectl apply -f service.yaml
+kubectl apply -f ingress.yaml
+
+# Simple deployment (no database, no storage)
+kubectl apply -f deployment-simple.yaml
+kubectl apply -f service.yaml
+kubectl apply -f ingress.yaml
+
+# Check rollout status
+kubectl rollout status deployment/sohamrepo-chatbot-deployment -n chatbot-prod
+
+# ========================================
+# VIEWING RESOURCES
+# ========================================
+
+# Get all resources in namespace
+kubectl get all -n chatbot-prod
+
+# View pods
+kubectl get pods -n chatbot-prod
+kubectl get pods -n chatbot-prod -l app=sohamrepo-chatbot
+
+# View deployments
+kubectl get deployments -n chatbot-prod
+
+# View services
+kubectl get svc -n chatbot-prod
+
+# View ingress
+kubectl get ingress -n chatbot-prod
+
+# View PVC
+kubectl get pvc -n chatbot-prod
+
+# View secrets
+kubectl get secrets -n chatbot-prod
+
+# View configmaps
+kubectl get configmaps -n chatbot-prod
+
+# ========================================
+# LOGS AND DEBUGGING
+# ========================================
+
+# View logs (follow mode)
+kubectl logs -f deployment/sohamrepo-chatbot-deployment -n chatbot-prod
+
+# View logs for specific pod
+kubectl logs <POD_NAME> -n chatbot-prod
+
+# View previous logs (if pod crashed)
+kubectl logs <POD_NAME> -n chatbot-prod --previous
+
+# Describe pod (see events and status)
+kubectl describe pod <POD_NAME> -n chatbot-prod
+kubectl describe pod -l app=sohamrepo-chatbot -n chatbot-prod
+
+# Describe deployment
+kubectl describe deployment sohamrepo-chatbot-deployment -n chatbot-prod
+
+# Get events
+kubectl get events -n chatbot-prod --sort-by='.lastTimestamp'
+
+# ========================================
+# INTERACTIVE ACCESS
+# ========================================
+
+# Execute shell in pod
+kubectl exec -it deployment/sohamrepo-chatbot-deployment -n chatbot-prod -- /bin/sh
+kubectl exec -it deployment/sohamrepo-chatbot-deployment -n chatbot-prod -- /bin/bash
+
+# Execute single command
+kubectl exec deployment/sohamrepo-chatbot-deployment -n chatbot-prod -- ls -la
+kubectl exec deployment/sohamrepo-chatbot-deployment -n chatbot-prod -- env
+
+# Test health endpoint
+kubectl exec deployment/sohamrepo-chatbot-deployment -n chatbot-prod -- curl http://localhost:8501/health
+
+# ========================================
+# PORT FORWARDING
+# ========================================
+
+# Forward local port to service
+kubectl port-forward svc/sohamrepo-chatbot-service 8501:8501 -n chatbot-prod
+
+# Forward local port to pod
+kubectl port-forward deployment/sohamrepo-chatbot-deployment 8501:8501 -n chatbot-prod
+
+# Access via: http://localhost:8501
+
+# ========================================
+# UPDATING DEPLOYMENT
+# ========================================
+
+# Update image tag
+kubectl set image deployment/sohamrepo-chatbot-deployment \
+  sohamrepo-chatbot=127.0.0.1:30085/sohamrepo/sohamrepo-chatbot:v2 \
+  -n chatbot-prod
+
+# Apply updated deployment file
+kubectl apply -f deployment.yaml
+
+# Restart deployment (rolling restart)
+kubectl rollout restart deployment/sohamrepo-chatbot-deployment -n chatbot-prod
+
+# Check rollout history
+kubectl rollout history deployment/sohamrepo-chatbot-deployment -n chatbot-prod
+
+# Rollback to previous version
+kubectl rollout undo deployment/sohamrepo-chatbot-deployment -n chatbot-prod
+
+# Rollback to specific revision
+kubectl rollout undo deployment/sohamrepo-chatbot-deployment --to-revision=2 -n chatbot-prod
+
+# ========================================
+# SCALING
+# ========================================
+
+# Scale deployment
+kubectl scale deployment/sohamrepo-chatbot-deployment --replicas=3 -n chatbot-prod
+
+# Autoscale (if HPA is configured)
+kubectl autoscale deployment/sohamrepo-chatbot-deployment \
+  --min=1 --max=5 --cpu-percent=80 -n chatbot-prod
+
+# ========================================
+# CLEANUP COMMANDS
+# ========================================
+
+# Delete specific resources
+kubectl delete deployment sohamrepo-chatbot-deployment -n chatbot-prod
+kubectl delete svc sohamrepo-chatbot-service -n chatbot-prod
+kubectl delete ingress sohamrepo-chatbot-ingress -n chatbot-prod
+kubectl delete pvc app-pvc -n chatbot-prod
+
+# Delete all resources with label
+kubectl delete all -l app=sohamrepo-chatbot -n chatbot-prod
+
+# Delete entire namespace (CAUTION!)
+kubectl delete namespace chatbot-prod
+
+# ========================================
+# MONITORING
+# ========================================
+
+# Watch pods in real-time
+kubectl get pods -n chatbot-prod -w
+
+# Top pods (resource usage)
+kubectl top pods -n chatbot-prod
+
+# Top nodes
+kubectl top nodes
+
+# ========================================
+# CONFIGMAP AND SECRET MANAGEMENT
+# ========================================
+
+# View secret (base64 encoded)
+kubectl get secret db-secret -n chatbot-prod -o yaml
+
+# Decode secret
+kubectl get secret db-secret -n chatbot-prod -o jsonpath='{.data.DB_USER}' | base64 --decode
+
+# View configmap
+kubectl get configmap db-config -n chatbot-prod -o yaml
+
+# Edit configmap
+kubectl edit configmap db-config -n chatbot-prod
+
+# Delete and recreate secret
+kubectl delete secret db-secret -n chatbot-prod
+kubectl create secret generic db-secret \
+  --from-literal=DB_USER=new_user \
+  --from-literal=DB_PASSWORD=new_password \
+  --from-literal=DB_NAME=new_db \
+  --namespace=chatbot-prod
+
+# ========================================
+# TROUBLESHOOTING
+# ========================================
+
+# Check if image can be pulled
+kubectl run test-pull --image=127.0.0.1:30085/sohamrepo/sohamrepo-chatbot:latest \
+  --dry-run=client -o yaml -n chatbot-prod
+
+# Check service endpoints
+kubectl get endpoints sohamrepo-chatbot-service -n chatbot-prod
+
+# Test DNS resolution (from another pod)
+kubectl run -it --rm debug --image=busybox --restart=Never -n chatbot-prod -- \
+  nslookup sohamrepo-chatbot-service.chatbot-prod.svc.cluster.local
+
+# Check resource quotas
+kubectl get resourcequota -n chatbot-prod
+
+# Check limit ranges
+kubectl get limitrange -n chatbot-prod

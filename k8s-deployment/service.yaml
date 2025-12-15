@@ -1,0 +1,16 @@
+# -------------------------------
+# Service
+# -------------------------------
+apiVersion: v1
+kind: Service
+metadata:
+  name: sohamrepo-chatbot-service
+  namespace: "chatbot-prod"
+spec:
+  selector:
+    app: sohamrepo-chatbot
+  ports:
+    - protocol: TCP
+      port: 8501
+      targetPort: 8501
+  type: ClusterIP

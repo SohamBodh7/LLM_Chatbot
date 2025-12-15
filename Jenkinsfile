@@ -17,6 +17,15 @@ spec:
     volumeMounts:
     - name: docker-sock
       mountPath: /var/run/docker.sock
+
+  - name: kubectl
+    image: bitnami/kubectl:latest
+    command:
+    - cat
+    tty: true
+    securityContext:
+      runAsUser: 0
+
   volumes:
   - name: docker-sock
     hostPath:
@@ -30,6 +39,7 @@ spec:
         NEXUS_URL = "nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085" 
         SONAR_HOST_URL = "http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000"
         IMAGE_TAG = "${BUILD_NUMBER}"
+        K8S_NAMESPACE = "chatbot-prod"
         
         // Credentials
         NEXUS_CREDS_ID = "nexus-docker-login" 
@@ -103,6 +113,39 @@ spec:
                             sh "docker push ${NEXUS_URL}/${APP_NAME}:${IMAGE_TAG}"
                             sh "docker push ${NEXUS_URL}/${APP_NAME}:latest"
                             echo "Docker images pushed successfully to Nexus"
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('6. Deploy to Kubernetes') {
+            steps {
+                container('kubectl') {
+                    script {
+                        echo "Deploying application to Kubernetes..."
+                        dir('k8s-deployment') {
+                            sh """
+                                # Create namespace if it doesn't exist
+                                kubectl apply -f namespace.yaml
+                                
+                                # Update image tag to current build
+                                sed -i 's|:latest|:${IMAGE_TAG}|g' deployment.yaml
+                                
+                                # Apply Kubernetes resources
+                                kubectl apply -f pvc.yaml
+                                kubectl apply -f deployment.yaml
+                                kubectl apply -f service.yaml
+                                kubectl apply -f ingress.yaml
+                                
+                                # Wait for deployment to complete
+                                kubectl rollout status deployment/${APP_NAME}-deployment -n ${K8S_NAMESPACE} --timeout=5m
+                                
+                                # Show deployment info
+                                echo "Deployment completed successfully!"
+                                kubectl get pods -n ${K8S_NAMESPACE} -l app=${APP_NAME}
+                                kubectl get svc -n ${K8S_NAMESPACE} -l app=${APP_NAME}
+                            """
                         }
                     }
                 }

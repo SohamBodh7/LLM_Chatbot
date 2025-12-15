@@ -1,0 +1,7 @@
+# -------------------------------
+# Namespace (Auto-create if missing)
+# -------------------------------
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: "chatbot-prod"

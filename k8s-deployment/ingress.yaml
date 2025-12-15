@@ -1,0 +1,23 @@
+# -------------------------------
+# Ingress
+# -------------------------------
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: sohamrepo-chatbot-ingress
+  namespace: "chatbot-prod"
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: chatbot.imcc.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: sohamrepo-chatbot-service
+                port:
+                  number: 8501
