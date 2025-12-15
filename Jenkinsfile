@@ -35,7 +35,7 @@ spec:
     }
 
     environment {
-        APP_NAME = "2401023-Chatbot"
+        APP_NAME = "2401023-chatbot"
         NEXUS_URL = "nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085" 
         SONAR_HOST_URL = "http://my-sonarqube-sonarqube.sonarqube.svc.cluster.local:9000"
         IMAGE_TAG = "${BUILD_NUMBER}"
