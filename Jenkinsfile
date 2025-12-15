@@ -300,6 +300,28 @@ spec:
             }
         }
 
+        stage('Cleanup Old Resources') {
+            steps {
+                container('kubectl') {
+                    script {
+                        echo "Checking for old namespace 'chatbot-prod'..."
+                        def namespaceExists = sh(
+                            script: 'kubectl get namespace chatbot-prod --ignore-not-found',
+                            returnStdout: true
+                        ).trim()
+                        
+                        if (namespaceExists) {
+                            echo "Found old namespace 'chatbot-prod'. Deleting..."
+                            sh 'kubectl delete namespace chatbot-prod --wait=true --timeout=60s || true'
+                            echo "Old namespace deleted successfully"
+                        } else {
+                            echo "No old namespace found. Proceeding with deployment..."
+                        }
+                    }
+                }
+            }
+        }
+
         stage('Deploy Application') {
             steps {
                 container('kubectl') {
