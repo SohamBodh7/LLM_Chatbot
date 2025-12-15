@@ -30,7 +30,7 @@ spec:
 
       containers:
         - name: sohamrepo-chatbot
-          image: 127.0.0.1:30085/sohamrepo/sohamrepo-chatbot:latest
+          image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401023-chatbot/2401023-chatbot:latest
 
           ports:
             - containerPort: 8501
