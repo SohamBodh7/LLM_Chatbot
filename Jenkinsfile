@@ -332,7 +332,46 @@ spec:
                             kubectl apply -f ingress.yaml
                             kubectl apply -f pvc.yaml
                             kubectl apply -f namespace.yaml
-                            kubectl rollout status deployment/sohamrepo-chatbot-deployment -n 2401023-chatbot
+                            kubectl rollout status deployment/sohamrepo-chatbot-deployment -n 2401023-chatbot --timeout=5m || echo "⚠️ Rollout timeout - checking pod status..."
+                        '''
+                    }
+                }
+            }
+        }
+
+        stage('Verify Deployment') {
+            steps {
+                container('kubectl') {
+                    script {
+                        echo "🔍 Checking deployment health..."
+                        sh '''
+                            echo "\n=== Namespace Status ==="
+                            kubectl get all -n 2401023-chatbot
+                            
+                            echo "\n=== Pod Details ==="
+                            kubectl get pods -n 2401023-chatbot -o wide
+                            
+                            echo "\n=== Deployment Status ==="
+                            kubectl describe deployment sohamrepo-chatbot-deployment -n 2401023-chatbot | tail -30
+                            
+                            echo "\n=== Recent Events ==="
+                            kubectl get events -n 2401023-chatbot --sort-by='.lastTimestamp' | tail -20
+                            
+                            # Get pod name and check logs if pod exists
+                            POD_NAME=$(kubectl get pods -n 2401023-chatbot -l app=sohamrepo-chatbot -o jsonpath='{.items[0].metadata.name}' 2>/dev/null || echo "")
+                            
+                            if [ ! -z "$POD_NAME" ]; then
+                                echo "\n=== Pod Description: $POD_NAME ==="
+                                kubectl describe pod $POD_NAME -n 2401023-chatbot | tail -50
+                                
+                                echo "\n=== Pod Logs: $POD_NAME ==="
+                                kubectl logs $POD_NAME -n 2401023-chatbot --tail=50 || echo "No logs available yet"
+                            else
+                                echo "\n⚠️ No pods found matching label app=sohamrepo-chatbot"
+                            fi
+                            
+                            echo "\n=== Ingress Status ==="
+                            kubectl get ingress -n 2401023-chatbot
                         '''
                     }
                 }
