@@ -46,11 +46,11 @@ spec:
                 secretKeyRef:
                   name: ai-api-secret
                   key: MAX_TOKENS
-            - name: GROK_API_KEY
+            - name: GROQ_API_KEY
               valueFrom:
                 secretKeyRef:
                   name: ai-api-secret
-                  key: GROK_API_KEY
+                  key: GROQ_API_KEY
           readinessProbe:
             httpGet:
               path: /health
