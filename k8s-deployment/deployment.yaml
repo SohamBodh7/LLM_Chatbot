@@ -35,6 +35,22 @@ spec:
           ports:
             - containerPort: 8501
 
+          env:
+            - name: MODEL_NAME
+              valueFrom:
+                secretKeyRef:
+                  name: ai-api-secret
+                  key: MODEL_NAME
+            - name: MAX_TOKENS
+              valueFrom:
+                secretKeyRef:
+                  name: ai-api-secret
+                  key: MAX_TOKENS
+            - name: GROK_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: ai-api-secret
+                  key: GROK_API_KEY
           readinessProbe:
             httpGet:
               path: /health
