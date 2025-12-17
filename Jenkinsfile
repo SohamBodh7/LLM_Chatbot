@@ -320,6 +320,9 @@ spec:
 
                         echo "Removing potential conflicting ingress..."
                         sh 'kubectl delete ingress sohamrepo-chatbot-ingress -n 2401023-chatbot --ignore-not-found=true || true'
+
+                        echo "Removing stale deployment..."
+                        sh 'kubectl delete deployment sohamrepo-chatbot-deployment -n 2401023-chatbot --ignore-not-found=true || true'
                     }
                 }
             }
