@@ -317,6 +317,9 @@ spec:
                         } else {
                             echo "No old namespace found. Proceeding with deployment..."
                         }
+
+                        echo "Removing potential conflicting ingress..."
+                        sh 'kubectl delete ingress sohamrepo-chatbot-ingress -n 2401023-chatbot --ignore-not-found=true || true'
                     }
                 }
             }
