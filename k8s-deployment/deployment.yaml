@@ -13,24 +13,24 @@ metadata:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: sohamrepo-chatbot-deployment
+  name: chatbot-deployment
   namespace: "2401023-chatbot"
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: sohamrepo-chatbot
+      app: chatbot
   template:
     metadata:
       labels:
-        app: sohamrepo-chatbot
+        app: chatbot
     spec:
       imagePullSecrets:
         - name: nexus-secret   # ⚠️ DO NOT CHANGE 
 
       containers:
-        - name: sohamrepo-chatbot
-          image: nexus-service-for-docker-hosted-registry.nexus.svc.cluster.local:8085/2401023-chatbot/2401023-chatbot:latest
+        - name: chatbot
+          image: 127.0.0.1:30085/2401023-chatbot/2401023-chatbot:latest
 
           ports:
             - containerPort: 8501
